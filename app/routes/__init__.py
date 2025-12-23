@@ -1,1 +1,1 @@
-from .contacts import router as contacts
+from .contacts_api import router as contacts_api

@@ -1,10 +1,10 @@
 import uvicorn
 from fastapi import FastAPI
 
-from app.routes import contacts
+from app.routes import contacts_api
 
 app = FastAPI(title="Rolling project")
-app.include_router(contacts)
+app.include_router(contacts_api)
 
 
 if __name__ == "__main__":

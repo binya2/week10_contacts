@@ -3,29 +3,24 @@ from typing import List, Optional
 from app.db.mySql.sql_data_interactor import MySQLConnector
 from app.models import Contact
 
+TABLE_NAME = "contacts"
+
 
 class MySQLContactRepository:
     def __init__(self, db: MySQLConnector):
         self.db = db
 
     def create_contact(self, contact: Contact) -> int:
-        query = """
-                INSERT INTO contact (first_name, last_name, phone_number)
-                VALUES (%s, %s, %s)
-                """
-        values = (
-            contact.first_name,
-            contact.last_name,
-            contact.phone_number,
-        )
+        query = (f"INSERT INTO contacts (first_name, last_name, phone_number)"
+                 f"VALUES ('{contact.first_name}','{contact.last_name}','{contact.phone_number}')")
         with self.db.get_cursor() as cursor:
-            cursor.execute(query, values)
+            cursor.execute(query)
             if cursor.rowcount != 1:
                 raise Exception("Insert failed")
             return cursor.lastrowid
 
     def get_all_contacts(self) -> List[Contact]:
-        query = "SELECT * FROM contact"
+        query = f"SELECT * FROM contacts"
         with self.db.get_cursor() as cursor:
             cursor.execute(query)
             rows = cursor.fetchall()
@@ -41,9 +36,9 @@ class MySQLContactRepository:
         ]
 
     def get_contact_by_id(self, contact_id: int) -> Optional[Contact]:
-        query = "SELECT * FROM contact WHERE id = %s"
+        query = f"SELECT * FROM contacts WHERE id = {contact_id}"
         with self.db.get_cursor() as cursor:
-            cursor.execute(query, (contact_id,))
+            cursor.execute(query)
             row = cursor.fetchone()
 
         if row is None:
@@ -57,31 +52,16 @@ class MySQLContactRepository:
         )
 
     def update_contact(self, contact: Contact):
-        query = """
-                UPDATE contact
-                SET first_name=%s,
-                    last_name=%s,
-                    phone_number=%s
-                WHERE id = %s
-                """
-        values = (
-            contact.first_name,
-            contact.last_name,
-            contact.phone_number,
-            contact.id,
-        )
+        query = f"UPDATE contacts SET phone_number={contact.phone_number} WHERE id = {contact.id}"
+
         with self.db.get_cursor() as cursor:
-            cursor.execute(query, values)
+            cursor.execute(query)
             if cursor.rowcount != 1:
                 raise Exception("Update failed")
 
     def delete_contact(self, id: int):
-        query = """
-                DELETE
-                FROM contact
-                WHERE id = %s
-                """
+        query = f"DELETE FROM contacts WHERE id = {id} "
         with self.db.get_cursor() as cursor:
-            cursor.execute(query, (id,))
+            cursor.execute(query)
             if cursor.rowcount != 1:
                 raise Exception("Delete failed")

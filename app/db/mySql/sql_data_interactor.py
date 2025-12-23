@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 import mysql.connector
-from mysql.connector import MySQLConnection, Error as MySQLError
+from mysql.connector import Error as MySQLError
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +25,14 @@ class MySQLConnector:
             "charset": charset,
         }
 
-        self.connection: Optional[MySQLConnection] = None
+        self.connection = None
         self._connect()
 
-        logger.info("Connection to MySQL DB successful (db=%s)", database)
+        logger.info("Connection to MySQL DB successful")
 
         if sql_file:
             self.init_database(sql_file)
-            logger.info("Initialize MySQL DB from %s successful", sql_file)
+            logger.info(f"Initialize MySQL DB from {sql_file} successful", )
 
     def _connect(self) -> None:
         try:
@@ -40,7 +40,7 @@ class MySQLConnector:
             if not self.connection.is_connected():
                 raise RuntimeError("Connection object created but not connected")
         except MySQLError as err:
-            logger.error("Failed to connect to MySQL: %s", err)
+            logger.error(f"Failed to connect to MySQL: {err}")
             raise RuntimeError("Connection to MySQL DB failed") from err
 
     def _ensure_connection(self) -> None:
@@ -85,7 +85,7 @@ class MySQLConnector:
                 try:
                     cursor.execute(command)
                 except MySQLError as err:
-                    logger.error("Command error:\n%s\n%s", command, err)
+                    logger.error(f"Command error:\n{command}\n{err}")
 
     def close(self) -> None:
         if self.connection is not None:
