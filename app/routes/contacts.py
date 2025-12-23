@@ -5,6 +5,7 @@ router = APIRouter(tags=["contacts"])
 
 @router.post("/contacts")
 async def post_contacts():
+
     return {"message": "contact added"}
 
 
