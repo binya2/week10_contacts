@@ -1,14 +1,14 @@
 import mysql.connector
 
+from app.models import Contact
 
-class DatabaseConnector:
 
-    def __init__(self, host, user, database, password=None, sql_file=""):
+class MySQLConnector:
+    def __init__(self, host, user, password=None, sql_file=""):
         self.config = {
             'host': host,
             'user': user,
             'password': password,
-            'database': database,
         }
         self.connection = None
         self.cursor = None
@@ -31,25 +31,43 @@ class DatabaseConnector:
 
         for command in commands:
             try:
-                self.execute_query(command)
+                self.cursor.execute(command)
             except mysql.connector.Error as err:
                 print(f"Command error:\n{command}\n{err}")
         self.connection.commit()
 
-    def execute_query(self, query):
-        results = None
-        try:
-            if self.connection.is_connected():
-                self.cursor.execute(query)
-                query_type = query.strip().upper().split()[0]
-                if query_type in ['INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP']:
-                    self.connection.commit()
-                    results = self.cursor.rowcount
-                    print(f"Query successful. {results} rows affected.")
-                else:
-                    results = self.cursor.fetchall()
-        except Exception as e:
-            print(f"Error: {e}")
-            results = None
 
-        return results
+class MySQLContactRepository:
+    def __init__(self, db: MySQLConnector):
+        self.db: MySQLConnector = db
+
+    def create_contact(self, contact: Contact) -> int:
+        query = f"""
+        INSERT INTO contact (first_name, last_name,phone_number)
+        VALUES ({contact.first_name},{contact.last_name},{contact.phone_number});
+        """
+        cursor = self.db.cursor
+        cursor.execute(query)
+        self.db.connection.commit()
+        if cursor.rowcount != 1:
+            raise Exception("Insert failed")
+        return cursor.lastrowid
+
+    def get_contact_by_id(self, user_id):
+        query = f"""
+        SELECT * 
+        FROM contact 
+        WHERE id={user_id}"""
+        self.get_contact_query(query)
+
+    def get_contact_query(self, query):
+        cursor = self.db.cursor
+        cursor.execute(query)
+        return cursor.fetchone()
+
+    def get_all_contact(self):
+        query = f"""
+        SELECT * 
+        FROM contact 
+        """
+        self.get_contact_query(query)
