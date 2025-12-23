@@ -4,7 +4,7 @@ from app.models import Contact
 
 
 class MySQLConnector:
-    def __init__(self, host, user, password=None, sql_file=""):
+    def __init__(self, host, user, password=None, sql_file=None):
         self.config = {
             'host': host,
             'user': user,
@@ -17,8 +17,9 @@ class MySQLConnector:
             if self.connection.is_connected():
                 self.cursor = self.connection.cursor(dictionary=True)
                 print("Connection to MySQL DB successful")
-                if sql_file != "":
+                if sql_file:
                     self.init_database(sql_file)
+                    print("Initialize MySQL DB successful")
             else:
                 raise ValueError("Connection to MySQL DB failed")
         except Exception as e:
