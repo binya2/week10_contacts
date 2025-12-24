@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from app.db.mySql.sql_data_interactor import MySQLConnector
-from app.models import Contact
+from db.mySql.sql_data_interactor import MySQLConnector
+from models import Contact
 
 TABLE_NAME = "contacts"
 

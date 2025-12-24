@@ -1,11 +1,17 @@
-from app.db.mySql.contact_sql import MySQLContactRepository
-from app.db.mySql.sql_data_interactor import MySQLConnector
+import os
+from pathlib import Path
+
+from db.mySql.contact_sql import MySQLContactRepository
+from db.mySql.sql_data_interactor import MySQLConnector
+
+BASE_DIR = Path(__file__).resolve().parent  # app/db
 
 db_connector = MySQLConnector(
-    host="localhost",
-    user="root",
-    password="Benny31.",
-    sql_file=r"C:\KodkodData\week_10\week10_contacts\app\db\mySql\init.sql",
+    host=os.getenv("DB_HOST", "localhost"),
+    user=os.getenv("DB_USER", "root"),
+    password=os.getenv("DB_PASSWORD", "Benny31."),
+    database=os.getenv("DB_NAME", "rolling_project"),
+    sql_file=str(BASE_DIR / "mySql" / "init.sql"),
 )
 
 

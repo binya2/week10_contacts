@@ -1,11 +1,14 @@
 import logging
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Optional
 
 import mysql.connector
 from mysql.connector import Error as MySQLError
 
 logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 class MySQLConnector:
@@ -14,6 +17,7 @@ class MySQLConnector:
             host: str,
             user: str,
             password: Optional[str] = None,
+            database: Optional[str] = None,
             sql_file: Optional[str] = None,
             charset: str = "utf8mb4",
     ):
@@ -21,6 +25,7 @@ class MySQLConnector:
         self.config = {
             "host": host,
             "user": user,
+            "database": database,
             "password": password,
             "charset": charset,
         }
@@ -31,8 +36,8 @@ class MySQLConnector:
         logger.info("Connection to MySQL DB successful")
 
         if sql_file:
-            self.init_database(sql_file)
-            logger.info(f"Initialize MySQL DB from {sql_file} successful", )
+            sql_path = Path(__file__).resolve().parent / "init.sql"
+            self.init_database(sql_path)
 
     def _connect(self) -> None:
         try:

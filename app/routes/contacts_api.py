@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.db.db import get_contact_repository
-from app.db.mySql.contact_sql import MySQLContactRepository
-from app.models import Contact
+from db.db import get_contact_repository
+from db.mySql.contact_sql import MySQLContactRepository
+from models import Contact
 
 router = APIRouter(tags=["contacts_api"])
 
@@ -35,7 +35,7 @@ async def put_contacts(contact_id: int, phone_number: dict,
 @router.get("/contacts")
 async def get_contacts(repo: MySQLContactRepository = Depends(get_contact_repository)):
     contacts = repo.get_all_contacts()
-    return {"contacts": contacts}
+    return {"list of al contacts": contacts}
 
 
 @router.delete("/contacts/{contact_id}")
