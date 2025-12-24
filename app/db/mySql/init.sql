@@ -1,9 +1,9 @@
-CREATE DATABASE IF NOT EXISTS rolling_project;
+create DATABASE IF NOT EXISTS rolling_project;
 
 USE rolling_project;
 
 
-CREATE TABLE IF NOT EXISTS contacts (
+create TABLE IF NOT EXISTS contacts (
     id int NOT NULL AUTO_INCREMENT,
     first_name varchar(50) DEFAULT NULL,
     last_name varchar(50) DEFAULT NULL,

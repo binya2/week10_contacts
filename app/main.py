@@ -6,7 +6,6 @@ from routes import contacts_api
 app = FastAPI(title="Rolling project")
 app.include_router(contacts_api)
 
-
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
