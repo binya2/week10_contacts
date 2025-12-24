@@ -13,7 +13,7 @@ router = APIRouter(tags=["contacts_api"])
 
 
 def get_service(db: DatabaseManager = Depends(get_db)) -> ContactService:
-    return ContactService(db.contacts)
+    return ContactService(db)
 
 
 @router.post("/contacts", status_code=status.HTTP_201_CREATED)

@@ -2,6 +2,7 @@ from typing import List
 
 from db.Idatabase import IContactRepository
 from models import Contact
+from starlette.concurrency import run_in_threadpool
 
 
 class ContactService:
@@ -9,17 +10,16 @@ class ContactService:
         self.repo = repo
 
     async def add_contact(self, contact: Contact) -> int:
-        new_id = await self.repo.create(contact)
-        return new_id
+        return await run_in_threadpool(self.repo.contacts.create, contact)
 
     async def get_contacts(self) -> List[Contact]:
-        return await self.repo.get_all()
+        return await run_in_threadpool(self.repo.contacts.get_all)
 
     async def get_contact(self, contact_id: int) -> Contact:
-        return await self.repo.get_by_id(contact_id)
+        return await run_in_threadpool(self.repo.contacts.get_by_id, contact_id)
 
     async def update_contact_details(self, contact: Contact) -> None:
-        await self.repo.update(contact)
+        await run_in_threadpool(self.repo.contacts.update, contact)
 
     async def remove_contact(self, contact_id: int) -> None:
-        await self.repo.delete(contact_id)
+        await run_in_threadpool(self.repo.contacts.delete, contact_id)
