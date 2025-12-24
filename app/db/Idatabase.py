@@ -11,11 +11,11 @@ class BaseRepository:
 
 class IContactRepository(ABC):
     @abstractmethod
-    async def create(self, contact: Contact) -> int:  # הוספנו async
+    async def create(self, contact: Contact) -> int:
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[Contact]:  # הוספנו async
+    async def get_all(self) -> List[Contact]:
         pass
 
     @abstractmethod

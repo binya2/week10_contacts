@@ -43,7 +43,6 @@ def load_config(config_path: str = "config.json") -> DBConfig:
         except Exception as e:
             print(f"Warning: Failed to load config file: {e}")
 
-    # דריסות Environment Variables
     config_values["host"] = os.getenv("DB_HOST", config_values["host"])
     config_values["user"] = os.getenv("DB_USER", config_values["user"])
     config_values["password"] = os.getenv("DB_PASSWORD", config_values["password"])

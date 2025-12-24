@@ -26,7 +26,7 @@ class DatabaseManager:
             host=config.host,
             user=config.user,
             password=config.password,
-            port=config.port,  # <--- התיקון: הוספנו את הפורט
+            port=config.port,
             database=config.database,
             pool_size=config.pool_size
         )

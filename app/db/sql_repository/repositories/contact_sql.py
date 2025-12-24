@@ -3,7 +3,6 @@ from typing import List, Optional
 from mysql.connector import Error as MySQLError
 from starlette.concurrency import run_in_threadpool
 
-# שינוי חשוב: ייבוא שגיאות ממקום נייטרלי כדי למנוע מעגליות
 from db.exceptions import OperationFailed, RecordNotFound
 from db.Idatabase import BaseRepository, IContactRepository
 from models import Contact
@@ -11,7 +10,6 @@ from models import Contact
 
 class MySQLContactRepository(BaseRepository, IContactRepository):
 
-    # --- מימושים סינכרוניים (פנימיים) ---
 
     def _create_sync(self, contact: Contact) -> int:
         query = "INSERT INTO contacts (first_name, last_name, phone_number) VALUES (%s, %s, %s)"
