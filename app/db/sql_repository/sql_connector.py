@@ -1,99 +1,102 @@
-import json
-import logging
 import os
+import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 
-from mysql.connector import pooling, Error as MySQLError
-
-logger = logging.getLogger(__name__)
+import mysql.connector
 
 
 @dataclass
-class DBConfig:
-    host: str
-    user: str
-    password: str
-    database: str
+class SQLConfig:
+    host: str = "localhost"
     port: int = 3306
+    user: str = "root"
+    password: str = ""
+    database: str = "rolling_project"
     pool_size: int = 5
-    db_type: str = "mysql"
-
-
-def load_config(config_path: str = "config.json") -> DBConfig:
-    config_values = {
-        "host": "localhost",
-        "user": "root",
-        "password": "Benny31.",
-        "database": "rolling_project",
-        "pool_size": 5,
-        "db_type": "mysql"
-    }
-
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r") as f:
-                file_data = json.load(f)
-                active = file_data.get("active_db", "mysql")
-
-                config_values["db_type"] = active
-
-                db_data = file_data.get("connections", {}).get(active, {})
-                config_values.update({k: v for k, v in db_data.items() if v is not None})
-        except Exception as e:
-            print(f"Warning: Failed to load config file: {e}")
-
-    config_values["host"] = os.getenv("DB_HOST", config_values["host"])
-    config_values["user"] = os.getenv("DB_USER", config_values["user"])
-    config_values["password"] = os.getenv("DB_PASSWORD", config_values["password"])
-    config_values["database"] = os.getenv("DB_NAME", config_values["database"])
-
-    pool_size_env = os.getenv("DB_POOL_SIZE")
-    if pool_size_env:
-        config_values["pool_size"] = int(pool_size_env)
-
-    return DBConfig(**config_values)
 
 
 class MySQLConnector:
     def __init__(self, host, user, password, port, database, pool_size=5):
-        self.dbconfig = {
-            "host": host,
-            "port": port,
-            "user": user,
-            "password": password,
-            "database": database,
-            "charset": "utf8mb4"
+        self.db_config = {
+            "host": host, "user": user, "password": password,
+            "port": port, "database": database
         }
+        self.pool_size = pool_size
+        self._pool = None
+        self._init_pool()
+
+    def _init_pool(self):
         try:
-            self.pool = pooling.MySQLConnectionPool(
-                pool_name="api_pool",
-                pool_size=pool_size,
-                pool_reset_session=True,
-                **self.dbconfig
+            self._pool = mysql.connector.pooling.MySQLConnectionPool(
+                pool_name="mypool", pool_size=self.pool_size, **self.db_config
             )
-        except MySQLError as err:
-            logger.error(f"Failed to create connection pool: {err}")
-            raise RuntimeError("DB Pool creation failed") from err
+        except Exception as e:
+            raise e
 
     @contextmanager
     def get_cursor(self):
-        connection = None
+        conn = None
         cursor = None
         try:
-            connection = self.pool.get_connection()
-            cursor = connection.cursor(dictionary=True)
+            if not self._pool: self._init_pool()
+            conn = self._pool.get_connection()
+            cursor = conn.cursor(dictionary=True)
             yield cursor
-            connection.commit()
-        except Exception:
-            if connection:
-                try:
-                    connection.rollback()
-                except:
-                    pass
-            raise
+            conn.commit()
+        except Exception as e:
+            if conn: conn.rollback()
+            raise e
         finally:
             if cursor: cursor.close()
-            if connection: connection.close()
+            if conn: conn.close()
+
+    def close(self):
+        pass
 
 
+@contextmanager
+def _server_connection(conf: SQLConfig):
+    conn = mysql.connector.connect(
+        host=conf.host, user=conf.user, password=conf.password, port=conf.port
+    )
+    cursor = conn.cursor()
+    try:
+        yield cursor
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def _extract_db_name(sql_text: str) -> str:
+    match = re.search(r"CREATE\s+DATABASE\s+(?:IF\s+NOT\s+EXISTS\s+)?['`\"]?(\w+)['`\"]?", sql_text, re.IGNORECASE)
+    if not match: raise ValueError("No 'CREATE DATABASE' found.")
+    return match.group(1)
+
+
+def _run_sql_commands(cursor, sql_text: str):
+    for cmd in sql_text.split(';'):
+        if cmd.strip(): cursor.execute(cmd.strip())
+
+
+def init_db_from_file(conf: SQLConfig, file_path: str) -> str:
+    if not os.path.exists(file_path): raise FileNotFoundError(f"Missing file: {file_path}")
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        script = f.read()
+
+    db_name = _extract_db_name(script)
+    print(f"Detected DB Name: {db_name}")
+
+    with _server_connection(conf) as cursor:
+        cursor.execute(f"SHOW DATABASES LIKE '{db_name}'")
+
+        if not cursor.fetchone():
+            print(f"Creating database '{db_name}'...")
+            _run_sql_commands(cursor, script)
+            print("Database initialized successfully.")
+        else:
+            print("Database already exists.")
+
+    return db_name
