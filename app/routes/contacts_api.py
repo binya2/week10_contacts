@@ -1,49 +1,82 @@
-from fastapi import APIRouter, Depends, HTTPException
+import traceback
 
-from db.db import get_contact_repository
-from db.mySql.contact_sql import MySQLContactRepository
+from db import get_db
+from db.exceptions import OperationFailed, RecordNotFound
+from db.manager import DatabaseManager
+from fastapi import APIRouter, Depends, HTTPException
 from models import Contact
+from models.contact import UpdateContactRequest
+from services.contact_service import ContactService
+from starlette import status
 
 router = APIRouter(tags=["contacts_api"])
 
 
-@router.post("/contacts")
-async def post_contacts(contact_in: Contact, repo: MySQLContactRepository = Depends(get_contact_repository)):
-    contact_in.id = repo.create_contact(contact_in)
-    return {
-        "message": "contact added",
-        "new contact": contact_in
-    }
+def get_service(db: DatabaseManager = Depends(get_db)) -> ContactService:
+    return ContactService(db.contacts)
+
+
+@router.post("/contacts", status_code=status.HTTP_201_CREATED)
+async def post_contacts(
+        contact_in: Contact,
+        service: ContactService = Depends(get_service)
+):
+    try:
+        new_id = await service.add_contact(contact_in)
+        contact_in.id = new_id
+        return {
+            "message": "contact added",
+            "new_contact": contact_in
+        }
+    except OperationFailed:
+        raise HTTPException(status_code=500, detail="Internal Database Error")
+    except Exception as e:
+        print("ERROR IN POST:")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.put("/contacts/{contact_id}")
-async def put_contacts(contact_id: int, phone_number: dict,
-                       repo: MySQLContactRepository = Depends(get_contact_repository)):
-    updated_contact = repo.get_contact_by_id(contact_id)
-
-    if updated_contact is None:
-        return {"message": "contact no found"}
-
-    updated_contact.phone_number = phone_number["phone_number"]
+async def put_contacts(
+        contact_id: int,
+        phone_payload: UpdateContactRequest,
+        service: ContactService = Depends(get_service)
+):
     try:
-        repo.update_contact(updated_contact)
-    except Exception:
-        return {"message": "No changes found"}
-    return {"message": "contact updated successfully"}
+        contact = await service.get_contact(contact_id)
+
+        if contact is None:
+            raise HTTPException(status_code=404, detail="Contact not found")
+
+        contact.phone_number = phone_payload.phone_number
+
+        await service.update_contact_details(contact)
+        return {"message": "contact updated successfully"}
+
+    except RecordNotFound:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    except OperationFailed:
+        raise HTTPException(status_code=500, detail="Database update failed")
 
 
 @router.get("/contacts")
-async def get_contacts(repo: MySQLContactRepository = Depends(get_contact_repository)):
-    contacts = repo.get_all_contacts()
-    return {"list of al contacts": contacts}
+async def get_contacts(service: ContactService = Depends(get_service)):
+    try:
+        contacts = await service.get_contacts()
+        return {"list_of_all_contacts": contacts}
+    except OperationFailed:
+        raise HTTPException(status_code=500, detail="Failed to retrieve contacts")
 
 
 @router.delete("/contacts/{contact_id}")
-async def delete_contacts(contact_id: int,
-                          repo: MySQLContactRepository = Depends(get_contact_repository)):
+async def delete_contacts(
+        contact_id: int,
+        service: ContactService = Depends(get_service)
+):
     try:
-        repo.delete_contact(contact_id)
-    except Exception:
+        await service.remove_contact(contact_id)
+        return {"message": "contact deleted successfully"}
+    except RecordNotFound:
         raise HTTPException(status_code=404, detail="Contact not found")
-
-    return {"message": "contact deleted successfully"}
+    except OperationFailed:
+        raise HTTPException(status_code=500, detail="Failed to delete contact")

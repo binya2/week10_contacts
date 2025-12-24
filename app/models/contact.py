@@ -8,3 +8,6 @@ class Contact(BaseModel):
     first_name: str
     last_name: str
     phone_number: str
+
+class UpdateContactRequest(BaseModel):
+    phone_number: str
