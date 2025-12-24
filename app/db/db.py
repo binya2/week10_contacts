@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-from mySql.contact_sql import MySQLContactRepository
-from mySql.sql_data_interactor import MySQLConnector
+from db.mySql.contact_sql import MySQLContactRepository
+from db.mySql.sql_data_interactor import MySQLConnector
 
 BASE_DIR = Path(__file__).resolve().parent
 
