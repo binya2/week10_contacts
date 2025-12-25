@@ -1,7 +1,6 @@
 import json
-import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 from .manager import DatabaseManager
 
@@ -38,4 +37,3 @@ def get_db_manager() -> DatabaseManager:
 
     else:
         raise ValueError(f"Unknown DB Type: {db_type}")
-

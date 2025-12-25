@@ -4,10 +4,11 @@ from db import get_db
 from db.exceptions import OperationFailed, RecordNotFound
 from db.manager import DatabaseManager
 from fastapi import APIRouter, Depends, HTTPException
-from models import Contact
-from models.contact import UpdateContactRequest
 from services.contact_service import ContactService
 from starlette import status
+
+from models import ContactIn, ContactPhoneNumber, Contact
+
 
 router = APIRouter(tags=["contacts_api"])
 
@@ -18,15 +19,18 @@ def get_service(db: DatabaseManager = Depends(get_db)) -> ContactService:
 
 @router.post("/contacts", status_code=status.HTTP_201_CREATED)
 async def post_contacts(
-        contact_in: Contact,
+        contact_in: ContactIn,
         service: ContactService = Depends(get_service)
 ):
     try:
         new_id = await service.add_contact(contact_in)
-        contact_in.id = new_id
+        contact = Contact(id=new_id,
+                          phone_number=contact_in.phone_number,
+                          first_name=contact_in.first_name,
+                          last_name=contact_in.last_name)
         return {
             "message": "contact added",
-            "new_contact": contact_in
+            "new_contact": contact
         }
     except OperationFailed:
         raise HTTPException(status_code=500, detail="Internal Database Error")
@@ -39,7 +43,7 @@ async def post_contacts(
 @router.put("/contacts/{contact_id}")
 async def put_contacts(
         contact_id: int,
-        phone_payload: UpdateContactRequest,
+        phone_payload: ContactPhoneNumber,
         service: ContactService = Depends(get_service)
 ):
     try:
@@ -62,7 +66,7 @@ async def put_contacts(
 @router.get("/contacts")
 async def get_contacts(service: ContactService = Depends(get_service)):
     try:
-        contacts = await service.get_contacts()
+        contacts = await service.get_all_contacts()
         return {"list_of_all_contacts": contacts}
     except OperationFailed:
         raise HTTPException(status_code=500, detail="Failed to retrieve contacts")
