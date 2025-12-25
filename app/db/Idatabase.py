@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 
-from app.models import ContactPhoneNumber, ContactIn, Contact
+from models import ContactPhoneNumber, ContactIn, Contact
 
 
 class BaseRepository:

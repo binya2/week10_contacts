@@ -4,18 +4,19 @@ from db.Idatabase import BaseRepository, IContactRepository
 from db.exceptions import OperationFailed, RecordNotFound
 from mysql.connector import Error as MySQLError
 
-from app.models import Contact
+from models import Contact, ContactIn, ContactPhoneNumber
 
 
 class MySQLContactRepository(BaseRepository, IContactRepository):
 
-    def create(self, contact: Contact) -> int:
+    def create(self, contact: ContactIn) -> int:
         query = "INSERT INTO contacts (first_name, last_name, phone_number) VALUES (%s, %s, %s)"
         params = (contact.first_name, contact.last_name, contact.phone_number)
         try:
             with self.connector.get_cursor() as cursor:
                 cursor.execute(query, params)
-                return cursor.lastrowid
+                new_id = cursor.lastrowid
+            return self.get_by_id(new_id)
         except MySQLError as e:
             raise OperationFailed(f"Create failed: {e}") from e
 
@@ -31,16 +32,18 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
         with self.connector.get_cursor() as cursor:
             cursor.execute(query, (contact_id,))
             row = cursor.fetchone()
+            print(cursor.fetchone())
             if row:
                 return Contact(**row)
             return None
 
-    def update(self, contact: Contact) -> None:
-        if not contact.id:
-            raise OperationFailed("Cannot update contact without ID")
+    def update(self, contact_id: int, contact_phone: ContactPhoneNumber) -> None:
+        contact = self.get_by_id(contact_id)
+        if not contact:
+            raise RecordNotFound("Cannot update contact without ID")
 
-        query = "UPDATE contacts SET first_name=%s, last_name=%s, phone_number=%s WHERE id=%s"
-        params = (contact.first_name, contact.last_name, contact.phone_number, contact.id)
+        query = "UPDATE contacts SET phone_number=%s WHERE id=%s"
+        params = (contact_phone.phone_number, contact.id)
 
         try:
             with self.connector.get_cursor() as cursor:
