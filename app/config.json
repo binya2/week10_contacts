@@ -1,20 +1,18 @@
 {
   "active_db": "mysql",
-
   "connections": {
     "mysql": {
-      "host": "db",
+      "host": "localhost",
       "port": 3306,
       "user": "root",
-      "password": "Benny31.",
-      "database": "rolling_project"
+      "database":  "rolling_project",
+      "password": "Benny31."
     },
     "mongo": {
-      "connection_string": "mongodb://mongo_user:pass@mongo_host:27017",
-      "collection_name": "contacts"
-    },
-    "json_file": {
-      "file_path": "/app/data/contacts.json"
+      "type": "nosql",
+      "host": "localhost",
+      "port": 27017,
+      "database": "rolling_project"
     }
   }
 }
