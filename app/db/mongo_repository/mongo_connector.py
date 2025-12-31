@@ -9,6 +9,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 @dataclass
 class MongoConfig:
+    """Configuration for MongoDB connection."""
     host: str = "localhost"
     port: int = 27017
     username: str = ""
@@ -17,6 +18,7 @@ class MongoConfig:
 
 
 class MongoConnector:
+    """MongoDB Connector Class"""
     def __init__(self, conf: MongoConfig):
         self._conf = conf
         self._client: Optional[MongoClient] = None
@@ -24,6 +26,7 @@ class MongoConnector:
         self._connect()
 
     def _connect(self):
+        """Establishes a connection to the MongoDB server."""
         if self._conf.username and self._conf.password:
             uri = f"mongodb://{self._conf.username}:{self._conf.password}@{self._conf.host}:{self._conf.port}/"
         else:
@@ -40,11 +43,13 @@ class MongoConnector:
             raise e
 
     def get_db(self):
+        """Returns the database instance."""
         if self._client is None:
             self._connect()
         return self._db
 
     def get_collection(self, collection_name: str):
+        """Returns a specific collection from the database."""
         return self.get_db()[collection_name]
 
     def close(self):
@@ -53,6 +58,7 @@ class MongoConnector:
 
 
 def init_db_from_json(conf: MongoConfig, file_path: str, collection_name: str) -> str:
+    """Initializes the MongoDB database from a JSON file."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Missing file: {file_path}")
 

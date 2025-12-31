@@ -7,17 +7,18 @@ from models.contact import ContactUpdate
 from services.contact_service import ContactService
 from starlette import status
 
-from app.models.types import AbstractID, parse_resource_id
 
 router = APIRouter(tags=["contacts_api"])
 
 
 def get_service(db: DatabaseManager = Depends(get_db)) -> ContactService:
+    """Dependency injector for ContactService."""
     return ContactService(db.contacts)
 
 
 @router.post("/contacts", status_code=status.HTTP_201_CREATED)
 async def post_contacts(contact_in: Contact, service: ContactService = Depends(get_service)):
+    """Endpoint to add a new contact."""
     try:
         contact_id = await service.add_contact(contact_in)
         return {
@@ -32,10 +33,13 @@ async def post_contacts(contact_in: Contact, service: ContactService = Depends(g
 
 @router.put("/contacts/{contact_id}")
 async def put_contacts(contact_update: ContactUpdate,
-                       contact_id: AbstractID = Depends(parse_resource_id),
+                       contact_id: str,
                        service: ContactService = Depends(get_service)):
+    """Endpoint to update an existing contact."""
     try:
+        print("Updating contact:", contact_id, contact_update)
         await service.update_contact_details(contact_id, contact_update)
+
         return {
             "message": "contact updated successfully"
         }
@@ -47,6 +51,7 @@ async def put_contacts(contact_update: ContactUpdate,
 
 @router.get("/contacts")
 async def get_contacts(service: ContactService = Depends(get_service)):
+    """Endpoint to retrieve all contacts."""
     try:
         contacts = await service.get_all_contacts()
         return {
@@ -57,8 +62,9 @@ async def get_contacts(service: ContactService = Depends(get_service)):
 
 
 @router.delete("/contacts/{contact_id}")
-async def delete_contacts(contact_id: AbstractID = Depends(parse_resource_id),
+async def delete_contacts(contact_id: str,
                           service: ContactService = Depends(get_service)):
+    """Endpoint to delete a contact."""
     try:
         await service.remove_contact(contact_id)
         return {

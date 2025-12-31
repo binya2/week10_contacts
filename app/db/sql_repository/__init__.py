@@ -1,11 +1,14 @@
 import os
 from pathlib import Path
+
+from db.manager import DatabaseManager
+
 from .repositories.contact_sql import MySQLContactRepository
 from .sql_connector import MySQLConnector, SQLConfig, init_db_from_file
-from .. import DatabaseManager
 
 
 def create_sql_db_manager(settings: dict) -> DatabaseManager:
+    """Creates and returns a DatabaseManager for MySQL."""
     if os.getenv("DB_HOST"): settings["host"] = os.getenv("DB_HOST")
     if os.getenv("DB_USER"): settings["user"] = os.getenv("DB_USER")
     if os.getenv("DB_PASSWORD"): settings["password"] = os.getenv("DB_PASSWORD")

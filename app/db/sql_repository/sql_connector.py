@@ -8,6 +8,7 @@ import mysql.connector
 
 @dataclass
 class SQLConfig:
+    """Configuration for MySQL connection."""
     host: str = "localhost"
     port: int = 3306
     user: str = "root"
@@ -17,6 +18,7 @@ class SQLConfig:
 
 
 class MySQLConnector:
+    """MySQL Connector Class"""
     def __init__(self, conf: SQLConfig):
         self.db_config = {
             "host": conf.host, "user": conf.user, "password": conf.password,
@@ -27,6 +29,7 @@ class MySQLConnector:
         self._init_pool()
 
     def _init_pool(self):
+        """Initializes the connection pool."""
         try:
             self._pool = mysql.connector.pooling.MySQLConnectionPool(
                 pool_name="mypool",
@@ -38,6 +41,7 @@ class MySQLConnector:
 
     @contextmanager
     def get_cursor(self):
+        """Context manager to get a database cursor."""
         conn = None
         cursor = None
         try:
@@ -60,6 +64,7 @@ class MySQLConnector:
 
 @contextmanager
 def _server_connection(conf: SQLConfig):
+    """Context manager for server-level connection (without specifying a database)."""
     conn = mysql.connector.connect(
         host=conf.host,
         user=conf.user,
@@ -76,17 +81,20 @@ def _server_connection(conf: SQLConfig):
 
 
 def _extract_db_name(sql_text: str) -> str:
+    """Extracts the database name from a CREATE DATABASE statement."""
     match = re.search(r"CREATE\s+DATABASE\s+(?:IF\s+NOT\s+EXISTS\s+)?['`\"]?(\w+)['`\"]?", sql_text, re.IGNORECASE)
     if not match: raise ValueError("No 'CREATE DATABASE' found.")
     return match.group(1)
 
 
 def _run_sql_commands(cursor, sql_text: str):
+    """Executes multiple SQL commands separated by semicolons."""
     for cmd in sql_text.split(';'):
         if cmd.strip(): cursor.execute(cmd.strip())
 
 
 def init_db_from_file(conf: SQLConfig, file_path: str) -> str:
+    """Initializes the MySQL database from a SQL file."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Missing file: {file_path}")
 

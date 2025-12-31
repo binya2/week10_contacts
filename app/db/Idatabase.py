@@ -6,11 +6,13 @@ from models import ContactUpdate, Contact
 
 
 class BaseRepository:
+    """Base repository class to be inherited by specific database repositories."""
     def __init__(self, connector):
         self.connector = connector
 
 
 class IContactRepository(ABC):
+    """Interface for contact repository defining CRUD operations."""
     @abstractmethod
     def create(self, contact: Contact) -> str:
         pass
@@ -28,5 +30,5 @@ class IContactRepository(ABC):
         pass
 
     @abstractmethod
-    def delete(self, contact_id: int) -> None:
+    def delete(self, contact_id: str) -> None:
         pass

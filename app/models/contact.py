@@ -1,22 +1,18 @@
 from typing import Optional
 
-from models.types import AbstractID
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel
 
 
 class ContactUpdate(BaseModel):
+    """Model for updating contact information."""
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     phone_number: Optional[str] = None
 
 
 class Contact(BaseModel):
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        populate_by_name=True,
-        from_attributes=True
-    )
-    id: Optional[AbstractID] = Field(default=None, alias="_id")
+    """Model representing a contact."""
+    id: Optional[str] = None
     first_name: str
     last_name: str
     phone_number: str

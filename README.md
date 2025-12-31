@@ -1,104 +1,162 @@
-# Contact Manager API 📞
+# Contacts API Service 📞
 
-A RESTful API service for managing contacts, built with **Python (FastAPI)** and **MySQL**.
-The project demonstrates a clean architecture (Service-Repository pattern), manual SQL query execution (no ORM), and full containerization using **Docker**.
+A robust RESTful API for managing contacts, built with **Python (FastAPI)**.
+The project implements **Clean Architecture** principles and the **Repository Pattern**, allowing for easy switching between different database implementations (MongoDB, SQL, etc.).
 
 ## 🚀 Features
 
 * **CRUD Operations**: Create, Read, Update, and Delete contacts.
-* **Manual SQL**: All database interactions are performed using raw SQL queries for optimized performance and control.
-* **Architecture**: Separation of concerns using **Router -> Service -> Repository** layers.
-* **Dockerized**: Fully containerized application and database using Docker Compose.
-* **Data Persistence**: MySQL data is persisted using Docker Volumes.
-* **Health Checks**: Ensures the API only starts after the Database is fully ready.
+* **Architecture**: Clean separation of concerns (Routes -> Services -> Manager -> Repository).
+* **Polymorphism**: Supports multiple database backends via `ldatabase.py` interface.
+* **Containerized**: Fully Dockerized with Kubernetes support.
+* **Configurable**: Environment-based configuration.
 
-## 🛠️ Tech Stack
-
-* **Language**: Python 3.11
-* **Framework**: FastAPI
-* **Database**: MySQL 8.0
-* **Containerization**: Docker & Docker Compose
-* **Libraries**: `mysql-connector-python`, `pydantic`, `uvicorn`
+---
 
 ## 📂 Project Structure
 
+Based on the actual project layout:
+
 ```text
-week10_contacts/
+.
 ├── app/
-│   ├── db/
-│   │   ├── sql_repository/     # Raw SQL implementations & init.sql
-│   │   ├── manager.py          # Database connection management
-│   │   └── Idatabase.py        # Repository Interfaces
-│   ├── models/                 # Pydantic data models
+│   ├── db/                     # Database Layer
+│   │   ├── mongo_repository/   # MongoDB implementation
+│   │   ├── sql_repository/     # SQL implementation structure
+│   │   ├── __init__.py
+│   │   ├── exceptions.py       # Custom DB exceptions
+│   │   ├── factory.py          # Pattern: Creates the correct DB connector
+│   │   ├── ldatabase.py        # Interface (Abstract Base Class) for DBs
+│   │   └── manager.py          # Database Manager (Facade)
+│   ├── models/                 # Pydantic Data Models
+│   │   ├── contact.py
+│   │   └── types.py
 │   ├── routes/                 # API Endpoints (Controllers)
 │   ├── services/               # Business Logic Layer
-│   ├── main.py                 # Application Entrypoint
-│   └── Dockerfile              # API Container configuration
-├── compose.yaml                # Docker Compose orchestration
-├── requirements.txt            # Python dependencies
-└── README.md                   # Project Documentation
+│   ├── config.json             # Configuration file
+│   ├── Dockerfile              # Docker build instructions
+│   ├── main.py                 # App Entry Point
+│   └── requirements.txt        # Python dependencies
+├── k8s/                        # Kubernetes Deployment Files
+│   ├── api-pod.yaml
+│   ├── api-service.yaml
+│   ├── mongodb-pod.yaml
+│   └── mongodb-service.yaml
+└── .venv/                      # Virtual Environment
 ```
 
-## ⚙️ Installation & Setup
+---
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/binya2/week10_contacts.git
-    cd week10_contacts
+## 🛠️ Getting Started
+
+### Prerequisites
+
+* Python 3.11+
+* Docker & Docker Hub account
+* Minikube & Kubectl (for Kubernetes)
+
+### 1. Running Locally (Python)
+
+Ensure you have a local instance of MongoDB running.
+
+```bash
+# 1. Navigate to the app directory (or root)
+cd week10_contacts
+
+# 2. Install dependencies
+pip install -r app/requirements.txt
+
+# 3. Run the server (Running as a module is recommended to handle imports)
+# Make sure your PYTHONPATH is set correctly, or run from the root:
+python -m app.main
+```
+The API will be available at `http://localhost:8000`.
+
+---
+
+### 2. Running with Docker 🐳
+
+Since the `Dockerfile` is inside the `app` folder, pay attention to the build context.
+
+**Step 1: Build the Image**
+```bash
+# Run this from the folder containing 'app'
+docker build -t <your-docker-id>/contacts-api:v1 -f app/Dockerfile app/
+```
+
+**Step 2: Create Network & Run DB**
+```bash
+docker network create contacts-net
+docker run -d --name mongo-container --network contacts-net -p 27017:27017 mongo:latest
+```
+
+**Step 3: Run the API**
+```bash
+docker run -d --name api-container --network contacts-net \
+  -e MONGO_HOST=mongo-container \
+  -p 8000:8000 \
+  <your-docker-id>/contacts-api:v1
+```
+
+---
+
+### 3. Running on Kubernetes (Minikube) ☸️
+
+```bash
+# 1. Start Minikube
+minikube start
+
+# 2. Apply Database Config
+kubectl apply -f k8s/mongodb-pod.yaml
+kubectl apply -f k8s/mongodb-service.yaml
+
+# 3. Apply API Config
+kubectl apply -f k8s/api-service.yaml
+kubectl apply -f k8s/api-pod.yaml
+
+# 4. Access the Service
+minikube service api-service
+```
+
+---
+
+## 🔌 How to Add/Switch Databases
+
+The project uses a **Factory Pattern** located in `app/db/factory.py`.
+
+### To Add a New Database (e.g., PostgreSQL):
+
+1.  **Implement the Interface:**
+    Go to `app/db/sql_repository/` and create a class that implements the methods defined in `app/db/ldatabase.py`.
+
+2.  **Update the Factory:**
+    Modify `app/db/factory.py` to recognize the new database type.
+
+    ```python
+    # Example logic inside factory.py
+    def get_db_manager(config):
+        if config.type == "mongo":
+            return create_mongo_manager(config)
+        elif config.type == "sql":
+             # Add your new SQL manager creation here
+            return create_sql_manager(config)
     ```
 
-2.  **Run with Docker Compose:**
-    ```bash
-    docker compose up --build -d
-    ```
+3.  **Update Config:**
+    Change your `config.json` or Environment Variables to set the active DB type.
 
-3.  **Wait for Initialization:**
-    The database takes about 20-30 seconds to initialize the schema and populate sample data.
+---
 
-## 🔌 API Endpoints
+## 📝 API Endpoints
 
-Base URL: `http://localhost:8000`
+* `GET /contacts` - Retrieve all contacts.
+* `GET /contacts/{id}` - Retrieve a specific contact.
+* `POST /contacts` - Create a new contact.
+* `PUT /contacts/{id}` - Update a contact.
+* `DELETE /contacts/{id}` - Delete a contact.
 
-| Method | Endpoint | Description | Request Body |
-| :--- | :--- | :--- | :--- |
-| **GET** | `/contacts` | Retrieve all contacts | None |
-| **POST** | `/contacts` | Create a new contact | `{"first_name": "...", "last_name": "...", "phone_number": "..."}` |
-| **PUT** | `/contacts/{id}` | Update contact phone | `{"phone_number": "..."}` |
-| **DELETE** | `/contacts/{id}` | Delete a contact | None |
+---
 
-## 🧪 Testing (Curl Commands)
+## 👨‍💻 Author
 
-You can test the API using `curl` or Postman.
-
-**1. Get All Contacts:**
-```bash
-curl http://localhost:8000/contacts
-```
-
-**2. Create a Contact:**
-```bash
-curl -X POST http://localhost:8000/contacts \
-  -H "Content-Type: application/json" \
-  -d '{"first_name":"New","last_name":"User","phone_number":"050-9999999"}'
-```
-
-**3. Update a Contact (Phone Only):**
-```bash
-curl -X PUT http://localhost:8000/contacts/1 \
-  -H "Content-Type: application/json" \
-  -d '{"phone_number":"054-1234123"}'
-```
-
-**4. Delete a Contact:**
-```bash
-curl -X DELETE http://localhost:8000/contacts/1
-```
-
-## 🔄 Admin / Maintenance
-
-To reset the database (if IDs get messy or for clean testing):
-```bash
-docker compose down -v
-docker compose up --build -d
-```
-*The `-v` flag removes the volume, triggering `init.sql` to run again on startup.*
+**Beni** - *Software Engineer*

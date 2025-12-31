@@ -1,12 +1,14 @@
 import os
 from pathlib import Path
 
+from db.manager import DatabaseManager
+
 from .mongo_connector import MongoConnector, MongoConfig, init_db_from_json
 from .repositories.contact_mongo import MongoContactRepository
-from .. import DatabaseManager
 
 
 def create_mongo_db_manager(settings: dict) -> DatabaseManager:
+    """Creates and returns a DatabaseManager for MongoDB."""
     if os.getenv("MONGO_HOST"): settings["host"] = os.getenv("MONGO_HOST")
     if os.getenv("MONGO_PORT"): settings["port"] = int(os.getenv("MONGO_PORT"))
     if os.getenv("MONGO_DB"): settings["database"] = os.getenv("MONGO_DB")

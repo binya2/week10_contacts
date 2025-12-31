@@ -1,3 +1,4 @@
+"""Custom exceptions for database operations in the application."""
 class AppDatabaseError(Exception):
     pass
 

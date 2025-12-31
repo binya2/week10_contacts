@@ -4,30 +4,29 @@ from db.Idatabase import BaseRepository, IContactRepository
 from db.exceptions import OperationFailed, RecordNotFound
 from models import Contact, ContactUpdate
 from mysql.connector import Error as MySQLError
-from starlette.concurrency import run_in_threadpool
 
 
 class MySQLContactRepository(BaseRepository, IContactRepository):
 
-    def _create_sync(self, contact: Contact) -> str:
+    def create(self, contact: Contact) -> int:
         query = "INSERT INTO contacts (first_name, last_name, phone_number) VALUES (%s, %s, %s)"
         params = (contact.first_name, contact.last_name, contact.phone_number)
         try:
             with self.connector.get_cursor() as cursor:
                 cursor.execute(query, params)
-                return str(cursor.lastrowid)
-
+                new_id = cursor.lastrowid
+            return self.get_by_id(new_id)
         except MySQLError as e:
             raise OperationFailed(f"Create failed: {e}") from e
 
-    def _get_all_sync(self) -> List[Contact]:
+    def get_all(self) -> List[Contact]:
         query = "SELECT * FROM contacts"
         with self.connector.get_cursor() as cursor:
             cursor.execute(query)
             rows = cursor.fetchall()
         return [Contact(**row) for row in rows]
 
-    def _get_by_id_sync(self, contact_id: int) -> Optional[Contact]:
+    def get_by_id(self, contact_id: int) -> Optional[Contact]:
         query = "SELECT * FROM contacts WHERE id = %s"
         with self.connector.get_cursor() as cursor:
             cursor.execute(query, (contact_id,))
@@ -36,7 +35,7 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
                 return Contact(**row)
             return None
 
-    def _update_sync(self, contact_id: int, contact_update: ContactUpdate) -> None:
+    def update(self, contact_id: str, contact_update: ContactUpdate) -> None:
         updates = []
         params = []
 
@@ -62,24 +61,9 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
         except MySQLError as e:
             raise OperationFailed(f"Update failed: {e}") from e
 
-    def _delete_sync(self, contact_id: int) -> None:
+    def delete(self, contact_id: str) -> None:
         query = "DELETE FROM contacts WHERE id = %s"
         with self.connector.get_cursor() as cursor:
             cursor.execute(query, (contact_id,))
             if cursor.rowcount == 0:
                 raise RecordNotFound(f"Contact {contact_id} not found")
-
-    async def create(self, contact: Contact) -> str:
-        return await run_in_threadpool(self._create_sync, contact)
-
-    async def get_all(self) -> List[Contact]:
-        return await run_in_threadpool(self._get_all_sync)
-
-    async def get_by_id(self, contact_id: int) -> Optional[Contact]:
-        return await run_in_threadpool(self._get_by_id_sync, contact_id)
-
-    async def update(self, contact_id: int, contact: ContactUpdate) -> None:
-        await run_in_threadpool(self._update_sync, contact_id, contact)
-
-    async def delete(self, contact_id: int) -> None:
-        await run_in_threadpool(self._delete_sync, contact_id)

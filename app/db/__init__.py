@@ -6,12 +6,14 @@ from .exceptions import *
 _db_instance: Optional[DatabaseManager] = None
 
 def get_db() -> DatabaseManager:
+    """Returns a singleton instance of the DatabaseManager."""
     global _db_instance
     if _db_instance is None:
         _db_instance = get_db_manager()
     return _db_instance
 
 def reload_db():
+    """Reloads the DatabaseManager instance."""
     global _db_instance
     _db_instance = None
     get_db()

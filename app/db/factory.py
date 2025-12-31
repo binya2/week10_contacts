@@ -6,6 +6,7 @@ from .manager import DatabaseManager
 
 
 def _load_raw_settings() -> tuple[Any, dict[Any, Any] | Any]:
+    """Loads the database settings from config.json file."""
     settings = {}
     base_dir = Path(__file__).resolve().parent.parent
     config_path = base_dir / "config.json"
@@ -24,6 +25,7 @@ def _load_raw_settings() -> tuple[Any, dict[Any, Any] | Any]:
 
 
 def get_db_manager() -> DatabaseManager:
+    """Factory function to create and return the appropriate DatabaseManager"""
     db_type, raw_settings = _load_raw_settings()
     if db_type == "mysql":
         from .sql_repository import create_sql_db_manager
