@@ -1,5 +1,5 @@
 {
-  "active_db": "mysql",
+  "active_db": "mongo",
   "connections": {
     "mysql": {
       "host": "localhost",
@@ -9,10 +9,9 @@
       "password": "Benny31."
     },
     "mongo": {
-      "type": "nosql",
       "host": "localhost",
       "port": 27017,
-      "database": "rolling_project"
+      "database": "PhonebookDB"
     }
   }
 }

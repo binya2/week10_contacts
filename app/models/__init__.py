@@ -1,4 +1,4 @@
-from .contact import Contact, ContactIn, ContactPhoneNumber
+from .contact import Contact, ContactUpdate
 
 
-__all__ = ["Contact","ContactIn","ContactPhoneNumber"]
+__all__ = ["Contact","ContactUpdate"]

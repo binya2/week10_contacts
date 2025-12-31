@@ -2,9 +2,12 @@ from db import get_db
 from db.exceptions import OperationFailed, RecordNotFound
 from db.manager import DatabaseManager
 from fastapi import APIRouter, Depends, HTTPException
-from models import ContactIn, ContactPhoneNumber, Contact
+from models import ContactUpdate, Contact
+from models.contact import ContactUpdate
 from services.contact_service import ContactService
 from starlette import status
+
+from app.models.types import AbstractID, parse_resource_id
 
 router = APIRouter(tags=["contacts_api"])
 
@@ -14,12 +17,12 @@ def get_service(db: DatabaseManager = Depends(get_db)) -> ContactService:
 
 
 @router.post("/contacts", status_code=status.HTTP_201_CREATED)
-async def post_contacts(contact_in: ContactIn, service: ContactService = Depends(get_service)):
+async def post_contacts(contact_in: Contact, service: ContactService = Depends(get_service)):
     try:
-        contact = await service.add_contact(contact_in)
+        contact_id = await service.add_contact(contact_in)
         return {
             "message": "contact added",
-            "new_contact": contact
+            "new_contact_id": contact_id
         }
     except OperationFailed:
         raise HTTPException(status_code=500, detail="Internal Database Error")
@@ -28,10 +31,11 @@ async def post_contacts(contact_in: ContactIn, service: ContactService = Depends
 
 
 @router.put("/contacts/{contact_id}")
-async def put_contacts(contact_id: int, contact_phone: ContactPhoneNumber,
+async def put_contacts(contact_update: ContactUpdate,
+                       contact_id: AbstractID = Depends(parse_resource_id),
                        service: ContactService = Depends(get_service)):
     try:
-        await service.update_contact_details(contact_id, contact_phone)
+        await service.update_contact_details(contact_id, contact_update)
         return {
             "message": "contact updated successfully"
         }
@@ -53,7 +57,8 @@ async def get_contacts(service: ContactService = Depends(get_service)):
 
 
 @router.delete("/contacts/{contact_id}")
-async def delete_contacts(contact_id: int, service: ContactService = Depends(get_service)):
+async def delete_contacts(contact_id: AbstractID = Depends(parse_resource_id),
+                          service: ContactService = Depends(get_service)):
     try:
         await service.remove_contact(contact_id)
         return {

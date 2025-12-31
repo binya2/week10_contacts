@@ -25,15 +25,13 @@ def _load_raw_settings() -> tuple[Any, dict[Any, Any] | Any]:
 
 def get_db_manager() -> DatabaseManager:
     db_type, raw_settings = _load_raw_settings()
-    print(db_type, raw_settings)
     if db_type == "mysql":
         from .sql_repository import create_sql_db_manager
         return create_sql_db_manager(raw_settings)
 
     elif db_type == "mongo":
-        # from .mongo_repository import create_mongo_db_manager
-        # return create_mongo_db_manager(raw_settings)
-        raise NotImplementedError("Mongo not implemented yet")
+        from .mongo_repository import create_mongo_db_manager
+        return create_mongo_db_manager(raw_settings)
 
     else:
         raise ValueError(f"Unknown DB Type: {db_type}")

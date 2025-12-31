@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-
-from models import ContactPhoneNumber, ContactIn, Contact
+from bson import ObjectId
+from models import ContactUpdate, Contact
 
 
 class BaseRepository:
@@ -12,7 +12,7 @@ class BaseRepository:
 
 class IContactRepository(ABC):
     @abstractmethod
-    def create(self, contact: ContactIn) -> int:
+    def create(self, contact: Contact) -> str:
         pass
 
     @abstractmethod
@@ -20,11 +20,11 @@ class IContactRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, contact_id: int) -> Optional[Contact]:
+    def get_by_id(self, contact_id: int | ObjectId) -> Optional[Contact]:
         pass
 
     @abstractmethod
-    def update(self, contact: ContactPhoneNumber) -> None:
+    def update(self, contact_id: int | ObjectId, contact: ContactUpdate) -> None:
         pass
 
     @abstractmethod

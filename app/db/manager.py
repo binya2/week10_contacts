@@ -4,6 +4,7 @@ from .Idatabase import IContactRepository
 
 @dataclass
 class DatabaseManager:
+
     contacts: IContactRepository
     _connector: Optional[object] = None
 

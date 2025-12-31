@@ -17,19 +17,21 @@ class SQLConfig:
 
 
 class MySQLConnector:
-    def __init__(self, host, user, password, port, database, pool_size=5):
+    def __init__(self, conf: SQLConfig):
         self.db_config = {
-            "host": host, "user": user, "password": password,
-            "port": port, "database": database
+            "host": conf.host, "user": conf.user, "password": conf.password,
+            "port": conf.port, "database": conf.database
         }
-        self.pool_size = pool_size
+        self.pool_size = conf.pool_size
         self._pool = None
         self._init_pool()
 
     def _init_pool(self):
         try:
             self._pool = mysql.connector.pooling.MySQLConnectionPool(
-                pool_name="mypool", pool_size=self.pool_size, **self.db_config
+                pool_name="mypool",
+                pool_size=self.pool_size,
+                **self.db_config
             )
         except Exception as e:
             raise e
@@ -39,7 +41,8 @@ class MySQLConnector:
         conn = None
         cursor = None
         try:
-            if not self._pool: self._init_pool()
+            if not self._pool:
+                self._init_pool()
             conn = self._pool.get_connection()
             cursor = conn.cursor(dictionary=True)
             yield cursor
@@ -58,9 +61,12 @@ class MySQLConnector:
 @contextmanager
 def _server_connection(conf: SQLConfig):
     conn = mysql.connector.connect(
-        host=conf.host, user=conf.user, password=conf.password, port=conf.port
+        host=conf.host,
+        user=conf.user,
+        password=conf.password,
+        port=conf.port
     )
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     try:
         yield cursor
         conn.commit()
@@ -81,7 +87,8 @@ def _run_sql_commands(cursor, sql_text: str):
 
 
 def init_db_from_file(conf: SQLConfig, file_path: str) -> str:
-    if not os.path.exists(file_path): raise FileNotFoundError(f"Missing file: {file_path}")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Missing file: {file_path}")
 
     with open(file_path, 'r', encoding='utf-8') as f:
         script = f.read()
