@@ -9,6 +9,7 @@ from mysql.connector import Error as MySQLError
 class MySQLContactRepository(BaseRepository, IContactRepository):
 
     def create(self, contact: Contact) -> int:
+        """Creates a new contact in the database."""
         query = "INSERT INTO contacts (first_name, last_name, phone_number) VALUES (%s, %s, %s)"
         params = (contact.first_name, contact.last_name, contact.phone_number)
         try:
@@ -20,6 +21,7 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
             raise OperationFailed(f"Create failed: {e}") from e
 
     def get_all(self) -> List[Contact]:
+        """Retrieves all contacts from the database."""
         query = "SELECT * FROM contacts"
         with self.connector.get_cursor() as cursor:
             cursor.execute(query)
@@ -27,6 +29,7 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
         return [Contact(**row) for row in rows]
 
     def get_by_id(self, contact_id: int) -> Optional[Contact]:
+        """Retrieves a contact by its ID."""
         query = "SELECT * FROM contacts WHERE id = %s"
         with self.connector.get_cursor() as cursor:
             cursor.execute(query, (contact_id,))
@@ -36,6 +39,7 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
             return None
 
     def update(self, contact_id: str, contact_update: ContactUpdate) -> None:
+        """Updates an existing contact in the database."""
         updates = []
         params = []
 
@@ -62,6 +66,7 @@ class MySQLContactRepository(BaseRepository, IContactRepository):
             raise OperationFailed(f"Update failed: {e}") from e
 
     def delete(self, contact_id: str) -> None:
+        """Deletes a contact from the database."""
         query = "DELETE FROM contacts WHERE id = %s"
         with self.connector.get_cursor() as cursor:
             cursor.execute(query, (contact_id,))
