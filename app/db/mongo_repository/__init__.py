@@ -8,8 +8,11 @@ from .. import DatabaseManager
 
 def create_mongo_db_manager(settings: dict) -> DatabaseManager:
     if os.getenv("MONGO_HOST"): settings["host"] = os.getenv("MONGO_HOST")
-    if os.getenv("MONGO_USER"): settings["username"] = os.getenv("MONGO_USER")
-    if os.getenv("MONGO_PASSWORD"): settings["password"] = os.getenv("MONGO_PASSWORD")
+    if os.getenv("MONGO_PORT"): settings["port"] = int(os.getenv("MONGO_PORT"))
+    if os.getenv("MONGO_DB"): settings["database"] = os.getenv("MONGO_DB")
+
+    if os.getenv("DB_USER"): settings["username"] = os.getenv("DB_USER")
+    if os.getenv("DB_PASSWORD"): settings["password"] = os.getenv("DB_PASSWORD")
 
     conf = MongoConfig(**settings)
 
