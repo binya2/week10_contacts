@@ -15,6 +15,8 @@ def get_db() -> DatabaseManager:
 def reload_db():
     """Reloads the DatabaseManager instance."""
     global _db_instance
+    if _db_instance is not None:
+        _db_instance.close()
     _db_instance = None
     get_db()
 

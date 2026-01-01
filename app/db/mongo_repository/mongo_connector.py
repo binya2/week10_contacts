@@ -19,6 +19,7 @@ class MongoConfig:
 
 class MongoConnector:
     """MongoDB Connector Class"""
+
     def __init__(self, conf: MongoConfig):
         self._conf = conf
         self._client: Optional[MongoClient] = None
@@ -31,14 +32,10 @@ class MongoConnector:
             uri = f"mongodb://{self._conf.username}:{self._conf.password}@{self._conf.host}:{self._conf.port}/"
         else:
             uri = f"mongodb://{self._conf.host}:{self._conf.port}/"
-
         try:
             self._client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-
             self._client.admin.command('ping')
-
             self._db = self._client[self._conf.database]
-
         except (ConnectionFailure, ServerSelectionTimeoutError) as e:
             raise e
 

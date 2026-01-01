@@ -84,13 +84,7 @@ Since the `Dockerfile` is inside the `app` folder, pay attention to the build co
 docker build -t <your-docker-id>/contacts-api:v1 -f app/Dockerfile app/
 ```
 
-**Step 2: Create Network & Run DB**
-```bash
-docker network create contacts-net
-docker run -d --name mongo-container --network contacts-net -p 27017:27017 mongo:latest
-```
-
-**Step 3: Run the API**
+**Step 2: Run the API**
 ```bash
 docker run -d --name api-container --network contacts-net \
   -e MONGO_HOST=mongo-container \
