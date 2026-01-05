@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from starlette import status
-
 from services.admin_service import AdminService
+from starlette import status
 
 router = APIRouter(tags=["admin"])
 

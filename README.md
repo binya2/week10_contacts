@@ -1,156 +1,109 @@
-# Contacts API Service 📞
+# Rolling Project - Contacts Management API
 
-A robust RESTful API for managing contacts, built with **Python (FastAPI)**.
-The project implements **Clean Architecture** principles and the **Repository Pattern**, allowing for easy switching between different database implementations (MongoDB, SQL, etc.).
+A robust RESTful API for managing contacts, built with **FastAPI**. This project features a flexible architecture that supports switching between **MySQL** and **MongoDB** databases dynamically using the Repository pattern. It is containerized with Docker and ready for Kubernetes deployment.
 
 ## 🚀 Features
 
-* **CRUD Operations**: Create, Read, Update, and Delete contacts.
-* **Architecture**: Clean separation of concerns (Routes -> Services -> Manager -> Repository).
-* **Polymorphism**: Supports multiple database backends via `ldatabase.py` interface.
-* **Containerized**: Fully Dockerized with Kubernetes support.
-* **Configurable**: Environment-based configuration.
+* **Dual Database Support:** Seamlessly switch between MySQL and MongoDB via configuration.
+* **Clean Architecture:** Implements the Repository and Factory design patterns for separation of concerns.
+* **FastAPI Powered:** High-performance, async-ready web framework using Python type hints.
+* **Containerized:** Includes `Dockerfile` and `compose.yaml` for easy deployment.
+* **Kubernetes Ready:** Includes K8s manifests for Pods and Services.
+* **Auto-Initialization:** Automatically loads mock data (JSON for Mongo, SQL script for MySQL) upon first run.
 
----
+## 🛠️ Tech Stack
+
+* **Language:** Python 3.11
+* **Framework:** FastAPI
+* **Databases:** MySQL 8.0, MongoDB
+* **Infrastructure:** Docker, Kubernetes (Minikube compatible)
+* **Libraries:** `pymongo`, `mysql-connector-python`, `pydantic`, `uvicorn`
 
 ## 📂 Project Structure
 
-Based on the actual project layout:
-
 ```text
-.
 ├── app/
-│   ├── db/                     # Database Layer
-│   │   ├── mongo_repository/   # MongoDB implementation
-│   │   ├── sql_repository/     # SQL implementation structure
-│   │   ├── __init__.py
-│   │   ├── exceptions.py       # Custom DB exceptions
-│   │   ├── factory.py          # Pattern: Creates the correct DB connector
-│   │   ├── ldatabase.py        # Interface (Abstract Base Class) for DBs
-│   │   └── manager.py          # Database Manager (Facade)
-│   ├── models/                 # Pydantic Data Models
-│   │   ├── contact.py
-│   │   └── types.py
-│   ├── routes/                 # API Endpoints (Controllers)
-│   ├── services/               # Business Logic Layer
-│   ├── config.json             # Configuration file
-│   ├── Dockerfile              # Docker build instructions
-│   ├── main.py                 # App Entry Point
-│   └── requirements.txt        # Python dependencies
-├── k8s/                        # Kubernetes Deployment Files
-│   ├── api-pod.yaml
-│   ├── api-service.yaml
-│   ├── mongodb-pod.yaml
-│   └── mongodb-service.yaml
-└── .venv/                      # Virtual Environment
+│   ├── db/             # Database implementations (Factory, SQL/Mongo Repositories)
+│   ├── models/         # Pydantic models
+│   ├── routes/         # API endpoints (Contacts, Admin)
+│   ├── services/       # Business logic layer
+│   ├── main.py         # Application entry point
+│   └── config.json     # Database configuration
+├── k8s/                # Kubernetes manifests
+├── compose.yaml        # Docker Compose configuration
+└── requirements.txt    # Python dependencies
 ```
 
----
+## ⚙️ Configuration
 
-## 🛠️ Getting Started
+The application determines which database to use based on `app/config.json` or environment variables.
 
-### Prerequisites
-
-* Python 3.11+
-* Docker & Docker Hub account
-* Minikube & Kubectl (for Kubernetes)
-
-### 1. Running Locally (Python)
-
-Ensure you have a local instance of MongoDB running.
-
-```bash
-# 1. Navigate to the app directory (or root)
-cd week10_contacts
-
-# 2. Install dependencies
-pip install -r app/requirements.txt
-
-# 3. Run the server (Running as a module is recommended to handle imports)
-# Make sure your PYTHONPATH is set correctly, or run from the root:
-python -m app.main
+**Example `config.json`:**
+```json
+{
+  "active_db": "mongo", 
+  "connections": {
+    "mysql": { "host": "localhost", "port": 3306, ... },
+    "mongo": { "host": "localhost", "port": 27017, ... }
+  }
+}
 ```
-The API will be available at `http://localhost:8000`.
+* Set `"active_db"` to `"mysql"` or `"mongo"` to switch implementations.
 
----
+## 🏃 Getting Started
 
-### 2. Running with Docker 🐳
+### Option 1: Run with Docker Compose (Recommended)
 
-Since the `Dockerfile` is inside the `app` folder, pay attention to the build context.
+This will start the API and a MySQL database container.
 
-**Step 1: Build the Image**
-```bash
-# Run this from the folder containing 'app'
-docker build -t <your-docker-id>/contacts-api:v1 -f app/Dockerfile app/
-```
+1.  Ensure Docker is running.
+2.  Update `app/config.json` to set `"active_db": "mysql"` (since the compose file provides MySQL).
+3.  Run the command:
+    ```bash
+    docker-compose up --build
+    ```
+4.  Access the API documentation at: `http://localhost:8000/docs`
 
-**Step 2: Run the API**
-```bash
-docker run -d --name api-container --network contacts-net \
-  -e MONGO_HOST=mongo-container \
-  -p 8000:8000 \
-  <your-docker-id>/contacts-api:v1
-```
+### Option 2: Run Locally (Python)
 
----
-
-### 3. Running on Kubernetes (Minikube) ☸️
-
-```bash
-# 1. Start Minikube
-minikube start
-
-# 2. Apply Database Config
-kubectl apply -f k8s/mongodb-pod.yaml
-kubectl apply -f k8s/mongodb-service.yaml
-
-# 3. Apply API Config
-kubectl apply -f k8s/api-service.yaml
-kubectl apply -f k8s/api-pod.yaml
-
-# 4. Access the Service
-minikube service api-service
-```
-
----
-
-## 🔌 How to Add/Switch Databases
-
-The project uses a **Factory Pattern** located in `app/db/factory.py`.
-
-### To Add a New Database (e.g., PostgreSQL):
-
-1.  **Implement the Interface:**
-    Go to `app/db/sql_repository/` and create a class that implements the methods defined in `app/db/ldatabase.py`.
-
-2.  **Update the Factory:**
-    Modify `app/db/factory.py` to recognize the new database type.
-
-    ```python
-    # Example logic inside factory.py
-    def get_db_manager(config):
-        if config.type == "mongo":
-            return create_mongo_manager(config)
-        elif config.type == "sql":
-             # Add your new SQL manager creation here
-            return create_sql_manager(config)
+1.  Install dependencies:
+    ```bash
+    pip install -r app/requirements.txt
+    ```
+2.  Ensure you have a running instance of MongoDB or MySQL locally.
+3.  Update `app/config.json` with your local DB credentials.
+4.  Run the server:
+    ```bash
+    cd app
+    python main.py
     ```
 
-3.  **Update Config:**
-    Change your `config.json` or Environment Variables to set the active DB type.
+### Option 3: Kubernetes (Minikube)
 
----
+1.  Start Minikube:
+    ```bash
+    minikube start
+    ```
+2.  Apply the manifests:
+    ```bash
+    kubectl apply -f k8s/
+    ```
+3.  Access the service via NodePort or use port-forwarding.
 
-## 📝 API Endpoints
+## 📡 API Endpoints
 
-* `GET /contacts` - Retrieve all contacts.
-* `GET /contacts/{id}` - Retrieve a specific contact.
-* `POST /contacts` - Create a new contact.
-* `PUT /contacts/{id}` - Update a contact.
-* `DELETE /contacts/{id}` - Delete a contact.
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/contacts` | Retrieve all contacts |
+| `POST` | `/contacts` | Create a new contact |
+| `PUT` | `/contacts/{id}` | Update an existing contact |
+| `DELETE` | `/contacts/{id}` | Delete a contact |
+| `POST` | `/admin/reload-db` | Reload DB config without restarting server |
 
----
+## 🧪 Testing
 
-## 👨‍💻 Author
+You can use the `test.http` file included in the root directory to test endpoints directly from your IDE (e.g., VS Code REST Client).
 
-**Beni** - *Software Engineer*
+## 📝 License
+
+This project is open-source and available for educational purposes.
